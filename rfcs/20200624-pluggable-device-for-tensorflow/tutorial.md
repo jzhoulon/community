@@ -204,42 +204,94 @@ Additional functions are provided for setting other properties of the operation 
 Registration is then actually performed using the `TF_RegisterOpDefinitionfunction`. This function populates a `TF_Status` indicating whether registration was successful and frees the resources associated with the op definition builder.
 
 The C equivalent of the bitcast op registration example above is shown below:
+```c++
+#include "tensorflow/c/ops.h"
 
-![](RackMultipart20210122-4-xmi1k9_html_4b019c871e9485f3.gif)
+void InferBitcastShape(TF_ShapeInferenceContext* ctx,  // see the section below on
+                       TF_Status* status);             // shape inference
+
+void InitPlugin() {
+  TF_OpDefinitionBuilder* b = TF_NewOpDefinitionBuilder("Bitcast");
+  TF_OpDefinitionBuilderAddInput(b, "input: T");
+  TF_OpDefinitionBuilderAddOutput(b, "output: type");
+  TF_OpDefinitionBuilderAddAttr(b, "T: {bfloat16, ...}");
+  TF_OpDefinitionBuilderAddAttr(b, "type: {bfloat16, ...}");
+  TF_OpDefinitionBuilderSetShapeInferenceFunction(b, &InferBitcastShape);
+
+  TF_Status* status = TF_NewStatus();
+  TF_RegisterOpDefinition(b, status);
+  if (TF_GetCode(status) != TF_OK) { /* handle errors */ }
+}
+```
 
 - **Ops shape inference**
 
-A significant feature of certain ops is their ability to infer their output shapes. TensorFlow will invoke the registered shape inference function (if one is provided) when it needs to know the op&#39;s output shape. The registration function declaration is shown below:
+A significant feature of certain ops is their ability to infer their output shapes. TensorFlow will invoke the registered shape inference function (if one is provided) when it needs to know the op's output shape. The registration function declaration is shown below:
+```c++
+void TF_OpDefinitionBuilderSetShapeInferenceFunction(
+  TF_OpDefinitionBuilder* builder,
+  void (*shape_inference_func)(TF_ShapeInferenceContext* ctx, TF_Status* status));
+```
 
-![](RackMultipart20210122-4-xmi1k9_html_e733d468cbff6edb.gif)
+A series of functions prefixed with `TF_ShapeInferenceContext` is provided for the following purposes:
 
-A series of functions prefixed with TF\_ShapeInferenceContext is provided for the following purposes:
+* Examining operator input shapes `TF_ShapeInferenceContextGetInput`.
+* Creating and deleting shape and dimension handles (`TF_{New,Delete}ShapeHandle`, `TF_{New,Delete}DimensionHandle`).
+* Manipulating shape and dimension handles (`TF_ShapeInferenceContextWithRank`, `TF_ShapeInferenceContextDim`).
 
-- Examining operator input shapes (TF\_ShapeInferenceContextGetInput).
-- Creating and deleting shape and dimension handles (TF\_{New,Delete}ShapeHandle, TF\_{New,Delete}DimensionHandle).
-- Manipulating shape and dimension handles (TF\_ShapeInferenceContextWithRank, TF\_ShapeInferenceContextDim).
-
-In general, C analogues to the C++ methods intensorflow::shape\_inference (see [tensorflow/core/framework/shape\_inference.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/shape_inference.h)) will be provided.
+In general, C analogues to the C++ methods in `tensorflow::shape_inference` (see [tensorflow/core/framework/shape_inference.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/shape_inference.h)) will be provided.
 
 - **Kernels implementation and registration.**
 
-In this section, you will learn how to implement kernels and register them to Core TensorFlow. Here we will use Conv2D as the example.
+In this section, you will learn how to implement kernels and register them to Core TensorFlow. Here we will use `Conv2D` as the example.
 
 - **Kernel Implementation**
 
-The main classes for C++ kernel implementations are OpKernelConstruction(provided by TensorFlow to kernel&#39;s constructor) and OpKernelContext (provided to kernel&#39;s compute method). The analogues in the C API are TF\_OpKernelConstruction and TF\_OpKernelContext. The aim of the C API is providing functions for working with these structs that match, as closely as possible, the C++ API.
+The main classes for C++ kernel implementations are `OpKernelConstruction`(provided by TensorFlow to kernel's constructor) and `OpKernelContext` (provided to kernel's compute method). The analogues in the C API are `TF_OpKernelConstruction` and `TF_OpKernelContext`. The aim of the C API is providing functions for working with these structs that match, as closely as possible, the C++ API.
 
-See below for an example of Conv2D kernel with the C++ API:
+See below for an example of `Conv2D` kernel with the C++ API:
+```c++
+struct Conv2DParameters {
+	std::vector<int32> dilations;
+	std::vector<int32> strides;
+	Padding padding;
+	std::vector<int64> explicit_paddings;
+};
 
-![](RackMultipart20210122-4-xmi1k9_html_944ba3a9929c3d6d.gif)
+template <typename Device, typename T>
+class Conv2DOp : public BinaryOp<T> {
+public:
+	explicit Conv2DOp(OpKernelConstruction* context) : BinaryOp<T>(context) {}
+	void Compute(OpKernelContext* context) override {}
+private:
+	Conv2DParameters params_;
+}
+```
+Above code shows a prototype of `Conv2D` C++ kernel, basically we can find that it has a constructor, a compute function and a parameter struct. The C equivalent `Conv2D` op can be:
+```c++
+#include "tensorflow/c/kernels.h"
 
-Above code shows a prototype of Conv2D C++ kernel, basically we can find that it has a constructor, a compute function and a parameter struct. The C equivalent Conv2D op can be:
+struct Conv2DParameters {
+	std::vector<int32> dilations;
+	std::vector<int32> strides;
+	Padding padding;
+	std::vector<int64> explicit_paddings;
+};
 
-![](RackMultipart20210122-4-xmi1k9_html_be08a708c9405dd1.gif)
+typedef struct Conv2DOp{
+	Conv2DParameters params_;
+};
 
+void* Conv2DOp_Create(Conv2DOp* kernel, TF_OpKernelConstruction* ctx);
+
+template <typename T>
+void Conv2DOp_Compute(void* kernel, TF_OpKernelContext* ctx);
+
+void Conv2DOp_Destroy(void* kernel)
+```
 Usually, plugin authors need to provide three functions: a creation function, a compute function and a deletion function. Compute function is a must, creation function and deletion functions are optional but if a creation is provided that causes memory allocation, a deletion function that frees the memory should also be provided, otherwise a leak will occur.
 
-- **Creation function(optional)**: responsible for creating a kernel, allocating private resource (such as memory), and storing attributions (if it has) retrieved from TF\_OpKernelConstruction to the kernel. Core TensorFlow will call this function when it needs to instantiate the kernel. The TF\_OpKernelConstruction pointer is owned by TensorFlow and will be deleted once the creation function returns.
+- **Creation function(optional)**: responsible for creating a kernel, allocating private resource (such as memory), and storing attributions (if it has) retrieved from `TF_OpKernelConstruction` to the kernel. Core TensorFlow will call this function when it needs to instantiate the kernel. The `TF_OpKernelConstruction` pointer is owned by TensorFlow and will be deleted once the creation function returns.
 - **Compute function** : responsible for retrieving inputs and compute stream and produce outputs. Core TensorFlow will call this function when need to perform a computation with this kernel.
 - **Destroy function(optional)**: responsible for destroying the kernel and free the resource allocated in the creation function. When TensorFlow no longer needs the kernel, it will call this function if one is provided. This function will retrieve the pointer returned in creation function or nullptr if no creation function was provided.
 
@@ -247,21 +299,31 @@ Here we will show how to use kernel C APIs to implement these functions:
 
 - **Creation function**
 
-In the C++ API, kernel&#39;s attributions are retrieved through GetAttr method in OpKernelConstruction.
+In the C++ API, kernel's attributions are retrieved through `GetAttr` method in `OpKernelConstruction`.
+```c++
+explicit Conv2DOp(OpKernelConstruction* context) : BinaryOp<T>(context) {
+	TF_RETURN_IF_ERROR(context->GetAttr("dilations", &params_.dilations));
+	TF_RETURN_IF_ERROR(context->GetAttr("strides", &params_.strides));
+	TF_RETURN_IF_ERROR(context->GetAttr("padding", &params_.padding));
+	if (context->HasAttr("explicit_paddings")) {
+	TF_RETURN_IF_ERROR(
+		context->GetAttr("explicit_paddings", &params_.explicit_paddings));
+	}
+	…
+}
+```
+Kernel C API provides a set of `TF_OpKernelConstruction_GetAttrXX` API to retrieve attributions from `TF_OpKernelConstruction`. These APIs can be separated into four categories according to the attribution's container:
 
-![](RackMultipart20210122-4-xmi1k9_html_651399922d7227ed.gif)
+* 1. Scalar
 
-Kernel C API provides a set of TF\_OpKernelConstruction\_GetAttrXX API to retrieve attributions from TF\_OpKernelConstruction. These APIs can be separated into four categories according to the attribution&#39;s container:
+  `TF_OpKernelConstruction_GetAttr(Type, Float,Int32, Int64, Bool…)` interprets the named kernel construction attribute as scalar value and places it into \*val, float for example:
+  ```c++
+  float value;
+  TF_OpKernelConstruction_GetAttrFloat(ctx, "float_attr", &val, status);
+  ```
+* 2. Vector
 
-1. Scalar
-
-TF\_OpKernelConstruction\_GetAttr(Type, Float,Int32, Int64, Bool…) interprets the named kernel construction attribute as scalar value and places it into \*val, float for example:
-
-![](RackMultipart20210122-4-xmi1k9_html_955a7887bcb38dc5.gif)
-
-1. Vector
-
-TF\_OpKernelConstruction\_GetAttr(Type, Float, Int32, Int64, Bool…)List interprets the named kernel construction as a (Type, Float, Int32, Int64, Bool) array and places it into \*vals. vals must point to an array of length at lease &#39;max\_values&#39; (ideally set to the list\_size from TF\_OpKernelConstruction\_GetAttrSize()).
+  `TF_OpKernelConstruction_GetAttr(Type, Float, Int32, Int64, Bool…)List` interprets the named kernel construction as a (Type, Float, Int32, Int64, Bool) array and places it into \*vals. vals must point to an array of length at leaset 'max\_values'(ideally set to the list_size from TF_OpKernelConstruction\_GetAttrSize()).
 
 ![](RackMultipart20210122-4-xmi1k9_html_dc19cc2118be1185.gif)
 
