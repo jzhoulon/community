@@ -72,14 +72,22 @@ Example:
 
 As you may see in the example, plugin needs to populate the platform and platform\_fns.
 
-- `platform->struct_size`: plugin needs to set it as SP\_PLATFORM\_STRUCT\_SIZE (defined in stream\_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
-- `platform->type`: This field allows plugin authors to register a new device type to the Core TensorFlow, this device type will be visible in front-end, such as tf.device(&quot;device type&quot;)
-- platfom-\&gt;name: This filed allows plugin authors to register a new StreamExecutor platform name to the Core TensorFlow. This name should be a unique name, you can&#39;t choose a name like &quot;CUDA&quot;, &quot;ROCM&quot; which are first party platform name.
-- platform-\&gt;visible\_device\_count: Core TensorFlow will query this number to decide how many physical devices are discovered by plugin&#39;s device runtime.
-- platform\_fns-\&gt;create\_device: a callback for creating SP\_Device. plugin authors need to define function that populate the SP\_Device:
-
-![](RackMultipart20210122-4-xmi1k9_html_5ea104d9f460a058.gif)
-
+- `platform->struct_size`: plugin needs to set it as `SP_PLATFORM_STRUCT_SIZE` (defined in stream\_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
+- `platform->type`: This field allows plugin authors to register a new device type to the Core TensorFlow, this device type will be visible in front-end, such as tf.device("/MyDevice:0";)
+- `platfom->name`: This filed allows plugin authors to register a new StreamExecutor platform name to the Core TensorFlow. This name should be a unique name, you can't choose a name like "CUDA", "ROCM", which are first party platform names.
+- `platform->visible_device_count`: Core TensorFlow will query this number to decide how many physical devices are discovered by plugin's device runtime.
+- `platform_fns->create_device`: a callback for creating `SP_Device`. plugin authors need to define function that populate the `SP_Device`:
+```
+#include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+void plugin_create_device(const SP_Platform* platform,
+	SE_CreateDeviceParams* params, TF_Status* const status) {
+	params->device->struct_size = SP_DEVICE_STRUCT_SIZE;
+	PluginDeviceHandle* device_h;
+	plugin_get_device(&device_h, params->device->ordinal);
+	params->device->device_handle = static_cast<void*>(device_h);
+	params->device->ordinal = params->ordinal;
+}
+```
 - platform\_fns-\&gt;destroy\_device: a callback for destroying SP\_Device. plugin authors need to define function that destroy the SP\_Device:
 
 ![](RackMultipart20210122-4-xmi1k9_html_d776be3f11ea5773.gif)
