@@ -1,7 +1,7 @@
-#
 
-# Contents
-
+===========================================
+Tutorial: How to create a TensorFlow plugin
+===========================================
 1. [Introduction](#Introduction)
 
 2. [Getting started](#Getting started)
@@ -20,7 +20,6 @@
 
    4. [Plugin Running](#Plugin Running)
 
-# **Tutorial: How to create a TensorFlow plugin**
 
 # Introduction
 
