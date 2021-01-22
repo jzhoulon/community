@@ -8,17 +8,17 @@
 
    1. [Plugin Implementation](#_Toc62041058)
 
-   2. [Device Runtime](#_Toc62041059)
+      1). [Device Runtime](#_Toc62041059)
 
-[Kernel/Op 5](#_Toc62041060)
+      2). [Kernels/Ops](#_Toc62041060)
 
-[Graph optimization 14](#_Toc62041061)
+      3). [Graph optimization](#_Toc62041061)
 
-[Plugin build 14](#_Toc62041062)
+   2. [Plugin build](#_Toc62041062)
 
-[Plugin installation 14](#_Toc62041063)
+   3. [Plugin installation](#_Toc62041063)
 
-[Plugin Running 14](#_Toc62041064)
+   4. [Plugin Running](#_Toc62041064)
 
 # **Tutorial: How to create a TensorFlow plugin**
 
