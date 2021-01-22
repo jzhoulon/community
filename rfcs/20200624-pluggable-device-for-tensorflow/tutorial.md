@@ -1,9 +1,4 @@
-.. Using backticks indicates inline code.
-.. default-role:: code
-
-===========================================
-Tutorial: How to create a TensorFlow plugin
-===========================================
+# Tutorial: How to create a TensorFlow plugin
 1. [Introduction](#Introduction)
 
 2. [Getting started](#Getting started)
