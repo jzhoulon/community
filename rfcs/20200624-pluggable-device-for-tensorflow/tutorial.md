@@ -2,9 +2,9 @@
 
 # Contents
 
-1. [Introduction](# Introduction)
+1. [Introduction](#Introduction)
 
-2. [Getting started](# Getting started)
+2. [Getting started](#Getting started)
 
    1. [Plugin Implementation](#_Toc62041058)
 
