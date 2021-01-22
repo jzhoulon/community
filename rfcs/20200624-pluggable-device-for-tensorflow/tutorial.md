@@ -77,17 +77,17 @@ As you may see in the example, plugin needs to populate the platform and platfor
 - `platfom->name`: This filed allows plugin authors to register a new StreamExecutor platform name to the Core TensorFlow. This name should be a unique name, you can't choose a name like "CUDA", "ROCM", which are first party platform names.
 - `platform->visible_device_count`: Core TensorFlow will query this number to decide how many physical devices are discovered by plugin's device runtime.
 - `platform_fns->create_device`: a callback for creating `SP_Device`. plugin authors need to define function that populate the `SP_Device`:
-```
-#include "tensorflow/c/experimental/stream_executor/stream_executor.h"
-void plugin_create_device(const SP_Platform* platform,
-	SE_CreateDeviceParams* params, TF_Status* const status) {
-	params->device->struct_size = SP_DEVICE_STRUCT_SIZE;
-	PluginDeviceHandle* device_h;
-	plugin_get_device(&device_h, params->device->ordinal);
-	params->device->device_handle = static_cast<void*>(device_h);
-	params->device->ordinal = params->ordinal;
-}
-```
+  ```
+  #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+  void plugin_create_device(const SP_Platform* platform,
+    SE_CreateDeviceParams* params, TF_Status* const status) {
+    params->device->struct_size = SP_DEVICE_STRUCT_SIZE;
+    PluginDeviceHandle* device_h;
+    plugin_get_device(&device_h, params->device->ordinal);
+    params->device->device_handle = static_cast<void*>(device_h);
+    params->device->ordinal = params->ordinal;
+  }
+  ```
 - platform\_fns-\&gt;destroy\_device: a callback for destroying SP\_Device. plugin authors need to define function that destroy the SP\_Device:
 
 ![](RackMultipart20210122-4-xmi1k9_html_d776be3f11ea5773.gif)
