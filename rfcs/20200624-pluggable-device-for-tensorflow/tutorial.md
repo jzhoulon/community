@@ -57,19 +57,36 @@ StreamExecutor is TensorFlow&#39;s main device manager, responsible for work exe
 Here we will introduce how to register a device runtime through StreamExecutor C API. Before that, we will have some conventions:
 
 - Struct defined in StreamExecutor C API: struct prefix indicates whether fields should be filled by the plugin or core implementation
-  - SE\_: set/filled by core unless explicit marked otherwise.
-  - SP\_: set/filled by plugin unless explicit marked otherwise.
+  - `SE_`: set/filled by core unless explicit marked otherwise.
+  - `SP_`: set/filled by plugin unless explicit marked otherwise.
 - Struct with Plugin prefix: these are structs defined in plugin, plugin can choose whatever name/definition they want.
 - Function with plugin\_ prefix: these are functions defined in plugin, plugin can choose whatever function name they want.
 
-**SE\_InitPlugin**
+**SE_InitPlugin**
 
-Plugins need to define SE\_InitPlugin function and populates SE\_PlatformRegistrationParams::SP\_Platform and SE\_PlatformRegistrationParams::SP\_PlatformFns. When this plugin is loaded by TF at runtime, SE\_InitPlugin method will be called and a new StreamExecutor platform will be registered by Core TensorFlow.
-
+Plugins need to define `SE_InitPlugin` function and populates `SE_PlatformRegistrationParams::SP_Platform` and `SE_PlatformRegistrationParams::SP_PlatformFns`. When this plugin is loaded by TF at runtime, `SE_InitPlugin` method will be called and a new StreamExecutor platform will be registered by Core TensorFlow.
 Example:
+```
+#include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+void SE_InitPlugin(SE_PlatformRegistrationParams* params, TF_Status* status) {
+	std::string type = "MyDevice";
+	std::string name = "MyPlatform";
 
-![](RackMultipart20210122-4-xmi1k9_html_afef03ee042fd451.gif)
-
+	// Sets struct_size to a valid value, and zero initializes other attributes.
+	params->platform->struct_size = SP_PLATFORM_STRUCT_SIZE;
+	params->platform->type = type.c_str();
+	params->platform->name = name.c_str();
+	params->platform->visible_device_count = plugin_visible_device_count();
+	params->platform_fns->create_device = plugin_create_device;
+	params->platform_fns->destroy_device = plugin_destroy_device;
+	params->platform_fns->create_stream_executor = plugin_create_stream_executor;
+	params->platform_fns->destroy_stream_executor = plugin_destroy_stream_executor;
+	params->platform_fns->create_timer_fns = plugin_create_timer_fns;
+	params->platform_fns->destroy_timer_fns = plugin_destroy_timer_fns;
+	params->destroy_platform = plugin_destroy_platform;
+ 	params->destroy_platform_fns = plugin_destroy_platform_fns;
+}
+```
 As you may see in the example, plugin needs to populate the platform and platform\_fns.
 
 - `platform->struct_size`: plugin needs to set it as `SP_PLATFORM_STRUCT_SIZE` (defined in stream\_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
@@ -88,110 +105,103 @@ As you may see in the example, plugin needs to populate the platform and platfor
     params->device->ordinal = params->ordinal;
   }
   ```
-- platform\_fns-\&gt;destroy\_device: a callback for destroying SP\_Device. plugin authors need to define function that destroy the SP\_Device:
+- `platform_fns->destroy_device`: a callback for destroying `SP_Device`. plugin authors need to define function that destroy the `SP_Device`:
+  ```
+  #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+  void plugin_destroy_device(const SP_Platform* platform, SP_Device* device) {
+    device->device_handle = nullptr;
+    device->ordinal = -1;
+  }
+  ```
+- `platform_fns->create_stream_executor`: a callback for creating `SP_StreamExecutor`. plugin authors need to define function that populates `SP_StreamExecutor`.
+  ```
+  #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+  void plugin_create_stream_executor(const SP_Platform* platform,
+    SE_CreateStreamExecutorParams* params,
+    TF_Status* const status) {
+    params->stream_executor->struct_size = SP_STREAMEXECUTOR_STRUCT_SIZE;
+    params->stream_executor->allocate = plugin_allocate;
+    params->stream_executor->deallocate = plugin_deallocate;
+    params->stream_executor->host_memory_allocate= plugin_host_memory_allocate;
+    params->stream_executor->host_memory_deallocate = plugin_host_memory_deallocate;
+    params->stream_executor->get_allocator_stats = plugin_get_allocator_stats;
+    params->stream_executor->device_memory_usage = plugin_device_memory_usage;
+    params->stream_executor->create_stream = plugin_create_stream;
+    params->stream_executor->destroy_stream = plugin_destroy_stream;
+    params->stream_executor->create_stream_dependency = plugin_create_stream_dependency;
+    params->stream_executor->get_stream_status = plugin_get_stream_status;
+    params->stream_executor->create_event = plugin_create_event;
+    params->stream_executor->destroy_event = plugin_destroy_event;
+    params->stream_executor->get_event_status = plugin_get_event_status;
+    params->stream_executor->record_event = plugin_record_event;
+    params->stream_executor->wait_for_event = plugin_wait_for_event;
+    params->stream_executor->create_timer = plugin_create_timer;
+    params->stream_executor->destroy_timer = plugin_destroy_timer;
+    params->stream_executor->start_timer = plugin_start_timer;
+    params->stream_executor->stop_timer = plugin_stop_timer;
+    params->stream_executor->memcpy_dtoh = plugin_memcpy_dtoh;
+    params->stream_executor->memcpy_htod = plugin_memcpy_htod;
+    params->stream_executor->memcpy_dtod = plugin_memcpy_dtod;
+    … …
+  }
+  ```
+  plugin authors need to populate all fields in `SP_StreamExecutor`. For example, register allocate function with `plugin_malloc`,it synchronously allocates 'size' bytes on the underlying platform and returns `SP_DeviceMemoryBase` representing that allocation.
+  ```
+  /*StreamExecutor Backend Impl*/
+  void plugin_allocate(const SP_Device* device, uint64_t size, int64_t memory_space,
+    SP_DeviceMemoryBase* mem) {
+    PluginDevice* device_handle = static_cast<PluginDevice*>(device->device_handle);
+    mem->struct_size = SP_DEVICE_MEMORY_BASE_STRUCT_SIZE;
+    mem->opaque = plugin_malloc(device_handle, size);
+    mem->size = size;
+  }
+  ```
+if the backend doesn't support this functionality, plugin authors can provide a dummy function
 
-![](RackMultipart20210122-4-xmi1k9_html_d776be3f11ea5773.gif)
-
-- platform\_fns-\&gt;create\_stream\_executor: a callback for creating SP\_StreamExecutor. plugin authors need to define function that populates SP\_StreamExecutor.
-
-#include&quot;tensorflow/c/experimental/stream\_executor/stream\_executor.h&quot;
-
-void plugin\_create\_stream\_executor(const SP\_Platform\* platform,
-
-SE\_CreateStreamExecutorParams\* params,
-
-TF\_Status\* const status) {
-
-params-\&gt;stream\_executor-\&gt;struct\_size = SP\_STREAMEXECUTOR\_STRUCT\_SIZE;
-
-params-\&gt;stream\_executor-\&gt;allocate = plugin\_allocate;
-
-params-\&gt;stream\_executor-\&gt;deallocate = plugin\_deallocate;
-
-params-\&gt;stream\_executor-\&gt;host\_memory\_allocate= plugin\_host\_memory\_allocate;
-
-params-\&gt;stream\_executor-\&gt;host\_memory\_deallocate =
-
-plugin\_host\_memory\_deallocate;
-
-params-\&gt;stream\_executor-\&gt;get\_allocator\_stats = plugin\_get\_allocator\_stats;
-
-params-\&gt;stream\_executor-\&gt;device\_memory\_usage = plugin\_device\_memory\_usage;
-
-params-\&gt;stream\_executor-\&gt;create\_stream = plugin\_create\_stream;
-
-params-\&gt;stream\_executor-\&gt;destroy\_stream = plugin\_destroy\_stream;
-
-params-\&gt;stream\_executor-\&gt;create\_stream\_dependency =
-
-plugin\_create\_stream\_dependency;
-
-params-\&gt;stream\_executor-\&gt;get\_stream\_status = plugin\_get\_stream\_status;
-
-params-\&gt;stream\_executor-\&gt;create\_event = plugin\_create\_event;
-
-params-\&gt;stream\_executor-\&gt;destroy\_event = plugin\_destroy\_event;
-
-params-\&gt;stream\_executor-\&gt;get\_event\_status = plugin\_get\_event\_status;
-
-params-\&gt;stream\_executor-\&gt;record\_event = plugin\_record\_event;
-
-params-\&gt;stream\_executor-\&gt;wait\_for\_event = plugin\_wait\_for\_event;
-
-params-\&gt;stream\_executor-\&gt;create\_timer = plugin\_create\_timer;
-
-params-\&gt;stream\_executor-\&gt;destroy\_timer = plugin\_destroy\_timer;
-
-params-\&gt;stream\_executor-\&gt;start\_timer = plugin\_start\_timer;
-
-params-\&gt;stream\_executor-\&gt;stop\_timer = plugin\_stop\_timer;
-
-params-\&gt;stream\_executor-\&gt;memcpy\_dtoh = plugin\_memcpy\_dtoh;
-
-params-\&gt;stream\_executor-\&gt;memcpy\_htod = plugin\_memcpy\_htod;
-
-params-\&gt;stream\_executor-\&gt;memcpy\_dtod = plugin\_memcpy\_dtod;
-
-……
-
-}
-
-plugin authors need to populate all fields in SP\_StreamExecutor. For example, register allocate function with _plugin\_malloc,_ it synchronously allocates &#39;size&#39; bytes on the underlying platform and returns &#39;SP\_DeviceMemoryBase&#39; representing that allocation.
-
-![](RackMultipart20210122-4-xmi1k9_html_e65921c8605509c2.gif)
-
-if the backend doesn&#39;t support this functionality, plugin authors can provide a dummy function
-
-- platform\_fns-\&gt;destroy\_stream\_executor: clean up fields inside SP\_StreamExecutor that were allocated by the plugin. `stream_executor` itself should not be deleted here.
-
-![](RackMultipart20210122-4-xmi1k9_html_27fc23ba2cfc9017.gif)
-
-- platform\_fns-\&gt;create\_timer\_fns: creating SP\_Timer. Allocates timer resources on the underlying platform and initialized its internals, setting &#39;timer&#39; output variable. You can provide a dummy function if you don&#39;t need this.
-- platform\_fns-\&gt;destroy\_timer\_fns: destroy SP\_Timer and deallocates timer resources on the underlying platform. You can provide a dummy implementation if you don&#39;t need this.
-- platform\_fns-\&gt;destroy\_platform: clean up fields insides SP\_Platform that were allocated by the plugin. `platform` itself should not be deleted here.
-- platform\_fns-\&gt;destroy\_platform\_fns: clean up fields insides SP\_PlatformFns.
+- `platform_fns->destroy_stream_executor`: clean up fields inside `SP_StreamExecutor` that were allocated by the plugin. `stream_executor` itself should not be deleted here.
+  ```
+  #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
+  void plugin_destroy_stream_executor(const SP_Platform* platform,
+                                 SP_StreamExecutor* stream_executor) {
+   stream_executor->allocate = nullptr;
+   stream_executor->deallocate = nullptr;
+   stream_executor->host_memory_allocate = nullptr;
+   stream_executor->host_memory_deallocate = nullptr;
+   stream_executor->get_allocator_stats = nullptr;
+   stream_executor->device_memory_usage = nullptr;
+   ... ...
+  }
+  ```
+- `platform_fns->create_timer_fns`: creating `SP_Timer`. Allocates timer resources on the underlying platform and initialized its internals, setting 'timer' output variable. You can provide a dummy function if you don't need this.
+- `platform_fns->destroy_timer_fns`: destroy `SP_Timer` and deallocates timer resources on the underlying platform. You can provide a dummy implementation if you don't need this.
+- `platform_fns->destroy_platform`: clean up fields insides `SP_Platform` that were allocated by the plugin. `platform` itself should not be deleted here.
+- `platform_fns->destroy_platform_fns`: clean up fields insides `SP_PlatformFns`.
 
 ### Kernels/Ops
 
 Modular TensorFlow provides a set of C APIs as the ABI-stable API for implementing kernels and ops. The intention is that existing kernels should be able to be ported to the new APIs with a minimum of reimplementation effort. The ops C API can be found in[tensorflow/c/ops.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/ops.h)and kernels C API can be found in[tensorflow/c/kernels.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/kernels.h). [tensorflow/c/tf\_tensor.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/tf_tensor.h), [tensorflow/c/tf\_status.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/tf_status.h).
 
-Plugin authors need to defineTF\_InitKernelfunction (include Ops/Kernels registration). When the plugin is loaded by TF at runtime, TF\_InitKernelmethod will be called and new Ops/Kernels will be registered to Core TensorFlow.
+Plugin authors need to define `TF_InitKernel` function (include Ops/Kernels registration). When the plugin is loaded by TF at runtime, `TF_InitKernel` method will be called and new Ops/Kernels will be registered to Core TensorFlow.
 
 - **Ops registration**
 
-This section introduces how to register a new op to Core TensorFlow. In the C++ API, ops are registered at static initialization time using the REGISTER\_OP macro. For example:
+This section introduces how to register a new op to Core TensorFlow. In the C++ API, ops are registered at static initialization time using the `REGISTER_OP` macro. For example:
+```c++
+REGISTER_OP("Bitcast")
+  .Input("input: T")
+  .Output("output: type")
+  .Attr("T: {bfloat16, ...}")
+  .Attr("type: {bfloat16, ...}")
+  .SetShapeFn([](InferenceContext* ctx) { ... })
+  .Doc("A bitcast operator");
+```
+The equivalent C API will be a series of functions that operate on `TF_OpDefinitionBuilder`, a pointer to an opaque struct (i.e. a struct whose content is not made known to the plugin authors). The functions include, but not limited to:
+* `TF_OpDefinitionBuilder* TF_NewOpDefinitionBuilder(const char* op_name)`: constructs and returns a new op registration builder for an op with the given name.
+* `void TF_OpDefinitionBuilderAddAttr(TF_OpDefinitionBuilder* builder, const char* attr)`: adds the given attribute to the builder(equivalent to Attr above).
+* `void TF_OpDefinitionBuilderAddInput(TF_OpDefinitionBuilder* builder, const char* input)`: adds the given input to the builder(equivalent to Input above).
 
-![](RackMultipart20210122-4-xmi1k9_html_a2509a308191d9ca.gif)
-
-The equivalent C API will be a series of functions that operate on TF\_OpDefinitionBuilder \*, a pointer to an opaque struct (i.e. a struct whose content is not made known to the plugin authors). The functions include, but not limited to:
-
-- TF\_OpDefinitionBuilder\* TF\_NewOpDefinitionBuilder(const char\* op\_name): constructs and returns a new op registration builder for an op with the given name.
-- void TF\_OpDefinitionBuilderAddAttr(TF\_OpDefinitionBuilder\* builder, const char\* attr): adds the given attribute to the builder(equivalent to Attr above).
-- void TF\_OpDefinitionBuilderAddInput(TF\_OpDefinitionBuilder\* builder, const char\* input): adds the given input to the builder(equivalent to Input above).
-
-Additional functions are provided for setting other properties of the operation (e.g. TF\_OpDefinitionBuilderSetIsCommutative).
-
-Registration is then actually performed using theTF\_RegisterOpDefinitionfunction. This function populates a TF\_Status indicating whether registration was successful and frees the resources associated with the op definition builder.
+Additional functions are provided for setting other properties of the operation (e.g. `TF_OpDefinitionBuilderSetIsCommutative`).
+Registration is then actually performed using the `TF_RegisterOpDefinitionfunction`. This function populates a `TF_Status` indicating whether registration was successful and frees the resources associated with the op definition builder.
 
 The C equivalent of the bitcast op registration example above is shown below:
 
