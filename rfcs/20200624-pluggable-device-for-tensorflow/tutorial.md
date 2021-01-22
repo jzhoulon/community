@@ -2,13 +2,13 @@
 
 # Contents
 
-[Introduction 2](#_Toc62041056)
+1. [Introduction](# Introduction)
 
-[Getting started 2](#_Toc62041057)
+2. [Getting started](# Getting started)
 
-[Plugin Implementation 2](#_Toc62041058)
+   1. [Plugin Implementation](#_Toc62041058)
 
-[Device Runtime 3](#_Toc62041059)
+   2. [Device Runtime](#_Toc62041059)
 
 [Kernel/Op 5](#_Toc62041060)
 
