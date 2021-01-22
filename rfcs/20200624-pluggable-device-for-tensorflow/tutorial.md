@@ -6,19 +6,19 @@
 
 2. [Getting started](#Getting started)
 
-   1. [Plugin Implementation](#_Toc62041058)
+   1. [Plugin Implementation](#Plugin Implementation)
 
-      1). [Device Runtime](#_Toc62041059)
+      1). [Device Runtime](#Device Runtime)
 
-      2). [Kernels/Ops](#_Toc62041060)
+      2). [Kernels/Ops](#Kernels/Ops)
 
-      3). [Graph optimization](#_Toc62041061)
+      3). [Graph optimization](#Graph optimization)
 
-   2. [Plugin build](#_Toc62041062)
+   2. [Plugin build](#Plugin build)
 
-   3. [Plugin installation](#_Toc62041063)
+   3. [Plugin installation](#[Plugin installation)
 
-   4. [Plugin Running](#_Toc62041064)
+   4. [Plugin Running](#Plugin Running)
 
 # **Tutorial: How to create a TensorFlow plugin**
 
@@ -66,7 +66,7 @@ Here we will introduce how to register a device runtime through StreamExecutor C
 - Struct with Plugin prefix: these are structs defined in plugin, plugin can choose whatever name/definition they want.
 - Function with plugin\_ prefix: these are functions defined in plugin, plugin can choose whatever function name they want.
 
-- **SE\_InitPlugin**
+**SE\_InitPlugin**
 
 Plugins need to define SE\_InitPlugin function and populates SE\_PlatformRegistrationParams::SP\_Platform and SE\_PlatformRegistrationParams::SP\_PlatformFns. When this plugin is loaded by TF at runtime, SE\_InitPlugin method will be called and a new StreamExecutor platform will be registered by Core TensorFlow.
 
@@ -76,7 +76,7 @@ Example:
 
 As you may see in the example, plugin needs to populate the platform and platform\_fns.
 
-- platform-\&gt;struct\_size: plugin needs to set it as SP\_PLATFORM\_STRUCT\_SIZE (defined in stream\_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
+- """platform->struct_size""": plugin needs to set it as SP\_PLATFORM\_STRUCT\_SIZE (defined in stream\_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
 - platform-\&gt;type: This field allows plugin authors to register a new device type to the Core TensorFlow, this device type will be visible in front-end, such as tf.device(&quot;device type&quot;)
 - platfom-\&gt;name: This filed allows plugin authors to register a new StreamExecutor platform name to the Core TensorFlow. This name should be a unique name, you can&#39;t choose a name like &quot;CUDA&quot;, &quot;ROCM&quot; which are first party platform name.
 - platform-\&gt;visible\_device\_count: Core TensorFlow will query this number to decide how many physical devices are discovered by plugin&#39;s device runtime.
@@ -167,7 +167,7 @@ if the backend doesn&#39;t support this functionality, plugin authors can provid
 - platform\_fns-\&gt;destroy\_platform: clean up fields insides SP\_Platform that were allocated by the plugin. `platform` itself should not be deleted here.
 - platform\_fns-\&gt;destroy\_platform\_fns: clean up fields insides SP\_PlatformFns.
 
-### Kernel/Op
+### Kernels/Ops
 
 Modular TensorFlow provides a set of C APIs as the ABI-stable API for implementing kernels and ops. The intention is that existing kernels should be able to be ported to the new APIs with a minimum of reimplementation effort. The ops C API can be found in[tensorflow/c/ops.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/ops.h)and kernels C API can be found in[tensorflow/c/kernels.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/kernels.h). [tensorflow/c/tf\_tensor.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/tf_tensor.h), [tensorflow/c/tf\_status.h](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/c/tf_status.h).
 
