@@ -546,7 +546,6 @@ void Conv2D_Compute(void* kernel, TF_OpKernelContext* ctx) {
 }
 ```
 **Destroy function**
-
 When Tensorflow no longer needs the kernel, it will call the destructor function in the OpKernel to release the resources created in the constructor. In plugin, we need to implement and register a destroy function to release those resources.
 ```c++
 void Conv2DOp_Destroy(void* kernel) {
@@ -608,13 +607,13 @@ When building the plugin, we have two dependencies here:
 A recommended build procedure is:
 
 Step1: install TF with:
-```shell
+```
 python3 -m venv venv
 source venv/bin/activate
 pip install tf-nightlyy</td>
 ```
 Step2: Then build plugin with:
-```bash
+```
 g++ -std=c++11 -shared plugin.cc -o plugin.so -fPIC -Ivenv/lib/python3.8/site-packages/tensorflow/include -Lvenv/lib/python3.8/site-packages/tensorflow/python -l:_pywrap_tensorflow_internal.so -O2</td>
 ```
 With this procedure, you can always build the plugin with installed TensorFlow ‘s compatible C API.
@@ -632,29 +631,18 @@ After installing the plugin to the specified path (site-packages/tensorflow/pyth
 Front-end usage of the plugged device has no difference with first party devices. Suppose you have installed a plugin registers a new device with "MY_DEVICE" device type, you can:
 
 1)   List device
-
 You can use *tf.config.list_physical_device()* to query whether the MY_DEVICE device is present on the host machine. If it is not found, then the plugin may not be loaded correctly.
-
-<table>
-  <tr>
-    <td>>>tf.list_physical_devices()
+```
+>>tf.list_physical_devices()
 [PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU'), PhysicalDevice(name='/physical_device:MY_DEVICE:0', device_type=MY_DEVICE)]</td>
-  </tr>
-</table>
-
+```
 
 2)   tf.device
-
 you can use with tf.device("my_device:0") to specify the MY_DEVICE device to be used for ops created/executed in a particular context.
-
-<table>
-  <tr>
-    <td>with tf.device("my_device:0"):
+```
+>>with tf.device("my_device:0"):
   # ops created here have the device my_device:0</td>
-  </tr>
-</table>
-
-
+```
 3.  automatic device placement
 
 if you don’t specify the device to be user for ops created/executed in a particular context, the op will be auto placed into the MY_DEVICE device if the op for the MY_DEVICE device is registered. Plugged devices currently have the highest priority.
