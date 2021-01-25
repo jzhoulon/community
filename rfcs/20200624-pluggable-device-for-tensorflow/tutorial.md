@@ -2,6 +2,7 @@
 
 1. [Introduction](#Introduction)
 2. [Getting started](#Getting started)
+
 # **Introduction**
 
 This tutorial is intended for developers who wish to extend TensorFlow to support a new device for the current TensorFlow stack through Modular TensorFlow. Plugin provides a decoupled way to add a new device to TensorFlow and has benefits:
