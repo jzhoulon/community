@@ -7,11 +7,11 @@
 
 This tutorial is intended for developers who wish to extend TensorFlow to support a new device for the current TensorFlow stack through Modular TensorFlow. Plugin provides a decoupled way to add a new device to TensorFlow and has benefits:
 
-  o   Simpler process: Does not have to add a new build toolchain to TensorFlow
+  -  Simpler process: Does not have to add a new build toolchain to TensorFlow
 
-  o   Faster time-to-solution: Does not need code review from the TensorFlow team.
+  -  Faster time-to-solution: Does not need code review from the TensorFlow team.
 
-  o   Lower maintenance efforts: Only C-API-related changes could break the integration. Unrelated TensorFlow changes would not break the code.
+  -  Lower maintenance efforts: Only C-API-related changes could break the integration. Unrelated TensorFlow changes would not break the code.
 
 The article describes how to implement, build, install and run the plugin. The plugin implementation section covers device runtime registration, kernel registration as well as graph optimizer registration.
 
