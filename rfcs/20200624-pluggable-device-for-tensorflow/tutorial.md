@@ -1,6 +1,7 @@
 # Tutorial: How to create a TensorFlow plugin**
 
 1. [Introduction](#Introduction)
+
 2. [Getting started](#Getting started)
 
 # **Introduction**
