@@ -97,19 +97,12 @@ As you may see in the example, plugin needs to populate the platform and platfor
 #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
 
 void plugin_create_device(const SP_Platform* platform,
-
    	SE_CreateDeviceParams* params, TF_Status* const status) {
-
    	params->device->struct_size = SP_DEVICE_STRUCT_SIZE;
-
    	PluginDeviceHandle* device_h;
-
    	plugin_get_device(&device_h, params->device->ordinal);
-
    	params->device->device_handle = static_cast<void*>(device_h);
-
    	params->device->ordinal = params->ordinal;
-
 }
 ```
 * `platform_fns->destroy_device`: a callback for destroying SP_Device. plugin authors need to define function that destroy the SP_Device:
@@ -117,11 +110,8 @@ void plugin_create_device(const SP_Platform* platform,
 #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
 
 void plugin_destroy_device(const SP_Platform* platform, SP_Device* device) {
-
    	device->device_handle = nullptr;
-
    	device->ordinal = -1;
-
 }
 ```
 * `platform_fns->create_stream_executor`: a callback for creating SP_StreamExecutor. plugin authors need to define a function that populates SP_StreamExecutor.  
@@ -152,7 +142,7 @@ void plugin_create_stream_executor(const SP_Platform* platform,
    	params->stream_executor->memcpy_dtoh = plugin_memcpy_dtoh;
    	params->stream_executor->memcpy_htod = plugin_memcpy_htod;
    	params->stream_executor->memcpy_dtod = plugin_memcpy_dtod;
-   	……
+   	... ...
 }
 ```
 plugin authors need to populate all fields in `SP_StreamExecutor`. For example, register allocate function with plugin_malloc, it synchronously allocates 'size' bytes on the underlying platform and returns `SP_DeviceMemoryBase` representing that allocation.
@@ -160,17 +150,11 @@ plugin authors need to populate all fields in `SP_StreamExecutor`. For example, 
 /*StreamExecutor Backend Impl*/
 
 void plugin_allocate(const SP_Device* device, uint64_t size, int64_t memory_space,
-
    	  SP_DeviceMemoryBase* mem) {
-
    	  PluginDevice* device_handle = static_cast<PluginDevice*>(device->device_handle);
-
    	  mem->struct_size = SP_DEVICE_MEMORY_BASE_STRUCT_SIZE;
-
    	  mem->opaque = plugin_malloc(device_handle, size);
-
    	  mem->size = size;
-
 }
 ```
 If the backend doesn’t support this functionality, plugin authors can provide a dummy function
@@ -187,7 +171,7 @@ void plugin_destroy_stream_executor(const SP_Platform* platform,
    	stream_executor->host_memory_deallocate = nullptr;
    	stream_executor->get_allocator_stats = nullptr;
    	stream_executor->device_memory_usage = nullptr;
-   	…
+   	... ...
 }
 ```
 * `platform_fns-> create_timer_fns`: creating `SP_Timer`. Allocates timer resources on the underlying platform and initializes its internals, setting ‘timer’ output variable. You can provide a dummy function if you don’t need this.
@@ -237,21 +221,19 @@ void InferBitcastShape(TF_ShapeInferenceContext* ctx,  // see the section below 
    	TF_Status* status);         	// shape inference
 
 void PluginRegisterBitCastOp() {
-   	TF_OpDefinitionBuilder* b = TF_NewOpDefinitionBuilder("Bitcast");
-   	TF_OpDefinitionBuilderAddInput(b, "input: T");
-   	TF_OpDefinitionBuilderAddOutput(b, "output: type");
-   	TF_OpDefinitionBuilderAddAttr(b, "T: {bfloat16, ...}");
-   	TF_OpDefinitionBuilderAddAttr(b, "type: {bfloat16, ...}");
-   	TF_OpDefinitionBuilderSetShapeInferenceFunction(b, &InferBitcastShape);
-   	TF_Status* status = TF_NewStatus();
-   	TF_RegisterOpDefinition(b, status);
-   	if (TF_GetCode(status) != TF_OK) { /* handle errors */ }
+    TF_OpDefinitionBuilder* b = TF_NewOpDefinitionBuilder("Bitcast");
+    TF_OpDefinitionBuilderAddInput(b, "input: T");
+    TF_OpDefinitionBuilderAddOutput(b, "output: type");
+    TF_OpDefinitionBuilderAddAttr(b, "T: {bfloat16, ...}");
+    TF_OpDefinitionBuilderAddAttr(b, "type: {bfloat16, ...}");
+    TF_OpDefinitionBuilderSetShapeInferenceFunction(b, &InferBitcastShape);
+    TF_Status* status = TF_NewStatus();
+    TF_RegisterOpDefinition(b, status);
+    if (TF_GetCode(status) != TF_OK) { /* handle errors */ }
 }
 
 void TF_InitKernel() {
-
-   	PluginRegisterBitCastOp();
-
+   PluginRegisterBitCastOp();
 }
 ```
 §  **Ops shape inference**
@@ -387,71 +369,71 @@ TF_OpKernelConstruction_GetAttrStringList(ctx, "vector_string_attr",
 reinterpret_cast<char**>(vals.get()), lens.get(),list_size, storage.get(),
 storage_size, status);
 for (size_t i = 0; i < list_size; ++i) {
-   	(*value)[i] = string(static_cast<const char*>(vals[i]), lens[i]);
+   (*value)[i] = string(static_cast<const char*>(vals[i]), lens[i]);
 }
 ```
 With these C APIs, we can retrieve Conv2D kernel's attributions from `TF_OpKernelConstruction`, see below for an example of creating a Conv2D kernel with C API. In this example, we use a series of C API for retrieving `std::vector<int32>`, `std::vector<int64>` and `std::string` attributions from `TF_OpKernelConstruction`. We also use a series of C APIs for error handling (`TF_NewStatus`, `TF_GetCode`, `TF_DeleteStatus`).
 ```c++
 void* Conv2D_Create(Conv2D* kernel, TF_OpKernelConstruction* ctx) {
-   	auto* kernel = new Conv2DOp;
-   	TF_Status* s = TF_NewStatus();
-   	// C++: context->GetAttr("dilations", &params.dilations);
-   	int32_t list_size = 0;
-   	int32_t total_size = 0;
-   	TF_OpKernelConstruction_GetAttrSize(ctx, "dilations", &list_size, &total_size, s);
-   	if (TF_GetCode(s) == TF_OK) {
-         	kernel->dilations_.resize(list_size);
-         	TF_OpKernelConstruction_GetAttrInt32List(ctx, "dilations", kernel->dilations.data(), list_size, s);
-   	}
+     auto* kernel = new Conv2DOp;
+     TF_Status* s = TF_NewStatus();
+     // C++: context->GetAttr("dilations", &params.dilations);
+     int32_t list_size = 0;
+     int32_t total_size = 0;
+     TF_OpKernelConstruction_GetAttrSize(ctx, "dilations", &list_size, &total_size, s);
+     if (TF_GetCode(s) == TF_OK) {
+      	kernel->dilations_.resize(list_size);
+      	TF_OpKernelConstruction_GetAttrInt32List(ctx, "dilations", kernel->dilations.data(), list_size, s);
+     }
 
-   	// C++: context->GetAttr("strides", &params.strides);
-   	if (TF_GetCode(s) == TF_OK) {
-           list_size = total_size = 0;
-           TF_OpKernelConstruction_GetAttrSize(ctx, "strides", &list_size, &total_size, s);
-           if (TF_GetCode(s) == TF_OK) {
-           	kernel->strides_.resize(list_size);
-           	TF_OpKernelConstruction_GetAttrInt32List(ctx, "strides", kernel->strides.data(), list_size, s);
-           }
-   	}
+     // C++: context->GetAttr("strides", &params.strides);
+     if (TF_GetCode(s) == TF_OK) {
+        list_size = total_size = 0;
+        TF_OpKernelConstruction_GetAttrSize(ctx, "strides", &list_size, &total_size, s);
+        if (TF_GetCode(s) == TF_OK) {
+        	kernel->strides_.resize(list_size);
+        	TF_OpKernelConstruction_GetAttrInt32List(ctx, "strides", kernel->strides.data(), list_size, s);
+        }
+     }
 
-   	// C++: context->GetAttr("padding", &params.padding)
-   	if (TF_GetCode(s) == TF_OK) {
-           list_size = total_size = 0;
-           TF_OpKernelConstruction_GetAttrSize(ctx, "padding", &list_size, &total_size, s);
-           if (TF_GetCode(s) == TF_OK) {
-             std::vector<char> val(total_size);
-             TF_OpKernelConstruction_GetAttrString(ctx, "padding", val.data(), total_size, s);
-             std::string padding_str = std::string(val.data(), total_size);
-             if (padding_str == "VALID") {
-               	kernel->padding_ = Padding::VALID;
-             } elif(padding_str == "SAME") {
-               	kernel->padding_ = Padding::SAME;
-             } elif(padding_str == "EXPLICIT") {
-               	kernel->padding_ = Padding::EXPLICIT;
-             }
-           }
+     // C++: context->GetAttr("padding", &params.padding)
+     if (TF_GetCode(s) == TF_OK) {
+        list_size = total_size = 0;
+        TF_OpKernelConstruction_GetAttrSize(ctx, "padding", &list_size, &total_size, s);
+        if (TF_GetCode(s) == TF_OK) {
+          std::vector<char> val(total_size);
+          TF_OpKernelConstruction_GetAttrString(ctx, "padding", val.data(), total_size, s);
+          std::string padding_str = std::string(val.data(), total_size);
+          if (padding_str == "VALID") {
+            	kernel->padding_ = Padding::VALID;
+          } elif(padding_str == "SAME") {
+            	kernel->padding_ = Padding::SAME;
+          } elif(padding_str == "EXPLICIT") {
+            	kernel->padding_ = Padding::EXPLICIT;
+          }
+        }
 
-   	}
+     }
 
-   	// C++: context->HasAttr("explicit_padding")
+     // C++: context->HasAttr("explicit_padding")
 
-   	if (TF_GetCode(s) == TF_OK) {
-           if (TF_OpKernelConstruction_HasAttr(ctx, "explicit_paddings", s)) {
-             list_size = total_size = 0;
-             TF_OpKernelConstruction_GetAttrSize(ctx, "explicit_paddings", &list_size, &total_size, s);
-             kernel->explicit_paddings_.resize(list_size);
-             TF_OpKernelConstruction_GetAttrInt64List(ctx, "explicit_paddings", kernel->explicit_paddings_.data(), list_size, s);
-           }
-   	}
+     if (TF_GetCode(s) == TF_OK) {
+        if (TF_OpKernelConstruction_HasAttr(ctx, "explicit_paddings", s)) {
+          list_size = total_size = 0;
+          TF_OpKernelConstruction_GetAttrSize(ctx, "explicit_paddings", &list_size, &total_size, s);
+          kernel->explicit_paddings_.resize(list_size);
+          TF_OpKernelConstruction_GetAttrInt64List(ctx, "explicit_paddings", kernel->explicit_paddings_.data(), list_size, s);
+        }
+     }
 
-   	if (TF_GetCode(s) != TF_OK) {
-          TF_OpKenrelConstruction_Failure(ctx, s);
-          delete kernel;
-          kernel = nullptr;
-   	}
+     if (TF_GetCode(s) != TF_OK) {
+       TF_OpKenrelConstruction_Failure(ctx, s);
+       delete kernel;
+       kernel = nullptr;
+     }
 
-   	TF_DeleteStatus(s);
-   	return kernel;
+     TF_DeleteStatus(s);
+     return kernel;
 
 }
 
@@ -636,15 +618,13 @@ You can use *tf.config.list_physical_device()* to query whether the MY_DEVICE de
 >>tf.list_physical_devices()
 [PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU'), PhysicalDevice(name='/physical_device:MY_DEVICE:0', device_type=MY_DEVICE)]</td>
 ```
-
 2)   tf.device
 you can use with tf.device("my_device:0") to specify the MY_DEVICE device to be used for ops created/executed in a particular context.
 ```
 >>with tf.device("my_device:0"):
   # ops created here have the device my_device:0</td>
 ```
-3.  automatic device placement
-
+3)  automatic device placement
 if you don’t specify the device to be user for ops created/executed in a particular context, the op will be auto placed into the MY_DEVICE device if the op for the MY_DEVICE device is registered. Plugged devices currently have the highest priority.
 
  
