@@ -1,7 +1,6 @@
 # Tutorial: How to create a TensorFlow plugin
 
 - [Introduction](#Introduction)
-
 - [Getting started](#Getting started)
 
 # **Introduction**
@@ -18,11 +17,11 @@ The article describes how to implement, build, install and run the plugin. The p
 
 Developers are also recommended to read the Modular TensorFlow design RFC to have a better understanding of the architecture.
 
-* [ Modular TensorFlow](https://github.com/tensorflow/community/blob/master/rfcs/20190305-modular-tensorflow.md)
+* [Modular TensorFlow](https://github.com/tensorflow/community/blob/master/rfcs/20190305-modular-tensorflow.md)
 
-*  [Kernel and Op Implementation and Registration API](https://github.com/tensorflow/community/blob/master/rfcs/20190814-kernel-and-op-registration.md)
+* [Kernel and Op Implementation and Registration API](https://github.com/tensorflow/community/blob/master/rfcs/20190814-kernel-and-op-registration.md)
 
-* [ StreamExecutor C API](https://github.com/tensorflow/community/blob/master/rfcs/20200612-stream-executor-c-api.md)
+* [StreamExecutor C API](https://github.com/tensorflow/community/blob/master/rfcs/20200612-stream-executor-c-api.md)
 
 * [Adding Pluggable Device for TensorFlow](https://github.com/tensorflow/community/blob/master/rfcs/20200624-pluggable-device-for-tensorflow.md)
 
