@@ -1,7 +1,21 @@
 # Tutorial: How to create a TensorFlow plugin
+1. [Introduction](#Introduction)
 
-- [Introduction](#Introduction)
-- [Getting started](#Getting started)
+2. [Getting started](#Getting started)
+
+   1. [Plugin Implementation](#Plugin Implementation)
+
+      1). [Device Runtime](#Device Runtime)
+
+      2). [Kernels/Ops](#Kernels/Ops)
+
+      3). [Graph optimization](#Graph optimization)
+
+   2. [Plugin build](#Plugin build)
+
+   3. [Plugin installation](#[Plugin installation)
+
+   4. [Plugin Running](#Plugin Running
 
 # **Introduction**
 
