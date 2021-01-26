@@ -441,7 +441,7 @@ void* Conv2D_Create(Conv2D* kernel, TF_OpKernelConstruction* ctx) {
      return kernel;
 
 }
-
+```
  **Compute function**
 
 Basically, compute functions are able to retrieve their input tensors and provide output tensors. In the C++ API, the `tensorflow::OpKernelContext::input` and `setoutput` family of functions provide this functionality. The equivalent C calls will be `TF_GetInput` and `TF_SetOutput` family of functions. These C functions operate on `TF_Tensor`. Besides, the kernel C API provides `TF_GetStream()` for retrieving a computation stream, which allows kernels submitted to the hardware.
