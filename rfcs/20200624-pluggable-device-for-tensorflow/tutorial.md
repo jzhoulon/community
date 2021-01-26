@@ -4,7 +4,6 @@
 2. [Getting started](#Getting started)
 
    1. [Plugin Implementation](#Plugin Implementation)
-
       1). [Device Runtime](#Device Runtime)
 
       2). [Kernels/Ops](#Kernels/Ops)
