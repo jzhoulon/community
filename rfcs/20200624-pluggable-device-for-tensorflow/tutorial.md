@@ -499,7 +499,7 @@ The equivalent OpKernelContext C functions provided by Modular TensorFlow are:
 
 * `TF_TensorIsAligned()`: return bool if this tensor is aligned.  
 
-===It should be noted that: ===when you call functions that deal with `TF_Tensor` on `TF_OpKernelContext`, such as :`TF_GetInput`, `TF_AllocateOutput`, `TF_ForwardInputOrAllocateOutput`, `TF_AllocateTmp`, you are creating a new `TF_Tensor` indeed, so you need to call `TF_DeleteTensor()` to delete these `TF_Tensor` manually at the exit of compute function, or you will get mem leak since when creating `TF_Tensor` based on `tensorflow::Tensor` in `OpKernelContext`, it will increase the ref count in the C++ Tensor and the tensor will not be freed if these `TF_Tensors` are not deleted.
+**It should be noted that: ** when you call functions that deal with `TF_Tensor` on `TF_OpKernelContext`, such as :`TF_GetInput`, `TF_AllocateOutput`, `TF_ForwardInputOrAllocateOutput`, `TF_AllocateTmp`, you are creating a new `TF_Tensor` indeed, so you need to call `TF_DeleteTensor()` to delete these `TF_Tensor` manually at the exit of compute function, or you will get mem leak since when creating `TF_Tensor` based on `tensorflow::Tensor` in `OpKernelContext`, it will increase the ref count in the C++ Tensor and the tensor will not be freed if these `TF_Tensors` are not deleted.
 
 With these C APIs, we can retrieve the input tensors and a computation stream, do the computation and then produce the output tensors. See below for an example of computing a Conv2D kernel, you may also notice that when the computation is finished, we need to delete the input, filter, output tensors manually.
 ```c++
