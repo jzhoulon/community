@@ -547,6 +547,7 @@ void Conv2D_Compute(void* kernel, TF_OpKernelContext* ctx) {
 }
 ```
 **Destroy function**
+
 When Tensorflow no longer needs the kernel, it will call the destructor function in the OpKernel to release the resources created in the constructor. In plugin, we need to implement and register a destroy function to release those resources.
 ```c++
 void Conv2DOp_Destroy(void* kernel) {
