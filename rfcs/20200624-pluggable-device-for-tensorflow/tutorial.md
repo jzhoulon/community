@@ -37,6 +37,10 @@ In this section, you will learn how to implement, build, install, and run a plug
 
 Modular TensorFlow provides a set of C API as an ABI-stable way to register a custom device runtime, kernels/ops and graph optimizer. This will simplify the distribution of plugins and allow plugin authors to distribute binary artifacts without necessarily publishing plugin source code.
 
+<div align=center>
+<img src=20200624-pluggable-device-for-tensorflow/modular_TensorFlow.png>
+</div>
+
 We anticipate three basic functionalities within a device plug-in module: device runtime, kernel/op, graph optimizer.
 
 ### **Device Runtime**
@@ -85,7 +89,7 @@ As you may see in the example, plugin needs to populate the platform and platfor
 
 * `platform->struct_size`: plugin needs to set it as `SP_PLATFORM_STRUCT_SIZE` (defined in stream_executor.h). This field is used for the StreamExecutor C API version check between Core TensorFlow and the plugin.
 
-* `platform->type`: This field allows plugin authors to register a new device type to the Core TensorFlow, this device type will be visible in front-end, such as tf.device("device type")
+* `platform->type`: This field allows plugin authors to register a new device type to the Core TensorFlow, this device type will be visible in front-end, such as tf.device("device type").
 
 * `platform->name`: This field allows plugin authors to register a new StreamExecutor platform name to the Core TensorFlow. This name should be a unique name, you can’t choose a name like "CUDA", “ROCM” which are first party platform names.
 
@@ -105,7 +109,7 @@ void plugin_create_device(const SP_Platform* platform,
    	params->device->ordinal = params->ordinal;
 }
 ```
-* `platform_fns->destroy_device`: a callback for destroying SP_Device. plugin authors need to define function that destroy the SP_Device:
+* `platform_fns->destroy_device`: a callback for destroying `SP_Device`. plugin authors need to define function that destroy the `SP_Device`:
 ```c++
 #include "tensorflow/c/experimental/stream_executor/stream_executor.h"
 
@@ -114,7 +118,7 @@ void plugin_destroy_device(const SP_Platform* platform, SP_Device* device) {
    	device->ordinal = -1;
 }
 ```
-* `platform_fns->create_stream_executor`: a callback for creating SP_StreamExecutor. plugin authors need to define a function that populates SP_StreamExecutor.  
+* `platform_fns->create_stream_executor`: a callback for creating `SP_StreamExecutor`. plugin authors need to define a function that populates `SP_StreamExecutor`.  
 ```c++
 void plugin_create_stream_executor(const SP_Platform* platform,
    	SE_CreateStreamExecutorParams* params,
@@ -439,9 +443,9 @@ void* Conv2D_Create(Conv2D* kernel, TF_OpKernelConstruction* ctx) {
 
 **Compute function**
 
-Basically, compute functions are able to retrieve their input tensors and provide output tensors. In the C++ API, the `tensorflow::OpKernelContext::input` and `setoutput` family of functions provide this functionality. The equivalent C calls will be `TF_GetInput` and `TF_SetOutput` family of functions. These C functions operate on `TF_Tensor`. Besides, the Kernel C API provides `TF_GetStream()` for retrieving a computation stream, which allows kernels submitted to the hardware.
+Basically, compute functions are able to retrieve their input tensors and provide output tensors. In the C++ API, the `tensorflow::OpKernelContext::input` and `setoutput` family of functions provide this functionality. The equivalent C calls will be `TF_GetInput` and `TF_SetOutput` family of functions. These C functions operate on `TF_Tensor`. Besides, the kernel C API provides `TF_GetStream()` for retrieving a computation stream, which allows kernels submitted to the hardware.
 
-In the C++ API, OpKernelContext provides a set of functions to retrieve input tensors, shapes, stream as well as allocate output tensors or forward input to output tensor. A simple Conv2D compute function with C++ API can be like:
+In the C++ API, `OpKernelContext` provides a set of functions to retrieve input tensors, shapes, stream as well as allocate output tensors or forward input to output tensor. A simple Conv2D compute function with C++ API can be like:
 ```c++
 void Compute(OpKernelContext* context) override {
    const Tensor& input = context->input(0);
