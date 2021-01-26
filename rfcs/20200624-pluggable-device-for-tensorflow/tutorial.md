@@ -161,7 +161,7 @@ void plugin_allocate(const SP_Device* device, uint64_t size, int64_t memory_spac
    	  mem->size = size;
 }
 ```
-If the backend doesn’t support this functionality, plugin authors can provide a dummy function
+If the backend doesn't support this functionality, plugin authors can provide a dummy function
 
 * `platform_fns->destroy_stream_executor`: clean up fields inside `SP_StreamExecutor` that were allocated by the plugin. `stream_executor` itself should not be deleted here.
 ```c++
@@ -178,9 +178,9 @@ void plugin_destroy_stream_executor(const SP_Platform* platform,
    	... ...
 }
 ```
-* `platform_fns-> create_timer_fns`: creating `SP_Timer`. Allocates timer resources on the underlying platform and initializes its internals, setting ‘timer’ output variable. You can provide a dummy function if you don’t need this.
+* `platform_fns-> create_timer_fns`: creating `SP_Timer`. Allocates timer resources on the underlying platform and initializes its internals, setting 'timer' output variable. You can provide a dummy function if you don’t need this.
 
-* `platform_fns->destroy_timer_fns`: destroy `SP_Timer` and deallocates timer resources on the underlying platform. You can provide a dummy implementation if you don’t need this.
+* `platform_fns->destroy_timer_fns`: destroy `SP_Timer` and deallocates timer resources on the underlying platform. You can provide a dummy implementation if you don't need this.
 
 * `platform_fns->destroy_platform`: clean up fields insides `SP_Platform` that were allocated by the plugin. platform itself should not be deleted here.
 
@@ -260,7 +260,7 @@ In this section, you will learn how to implement kernels and register them to Co
 
 ***Kernel Implementation***
 
-The main classes for C++ kernel implementations are `OpKernelConstruction` (provided by TensorFlow to the kernel's constructor) and `OpKernelContext` (provided to the kernel's compute method). The analogues in the C API are `TF_OpKernelConstruction` and `TF_OpKernelContext`. The aim of the C API is providing functions for working with these structs that match, as closely as possible, the C++ API.
+The main classes for C++ kernel implementations are `OpKernelConstruction` (provided by TensorFlow to the kernel's constructor) and `OpKernelContext` (provided to the kernel's compute method). The analogues in the C API are `TF_OpKernelConstruction` and `TF_OpKernelContext`.The aim of the C API is providing functions for working with these structs that match, as closely as possible, the C++ API.
 See below for an example of Conv2D kernel with the C++ API:
 ```c++
 struct Conv2DParameters {
@@ -347,6 +347,7 @@ TF_OpKernelConstruction_GetAttrFloatList(ctx, "vector_float_attr",
 					 values.data(), list_size, status);
 ```
 3. String
+
 `TF_OpKernelConstruction_GetAttrString` interprets the named kernel construction attribute as string and places it into *val. vals must point to an array of length at least 'max_length' (ideally set to total_size from `TF_OpKernelConstruction_GetAttrSize()`).
 ```
 int32_t list_size = 0;
