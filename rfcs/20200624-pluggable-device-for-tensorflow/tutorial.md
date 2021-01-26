@@ -1,23 +1,22 @@
 # Tutorial: How to create a TensorFlow plugin
 1. [Introduction](#Introduction)
 
-2. [Getting started](#Getting started)
+2. [Getting started](#Getting-started)
 
-   1. [Plugin Implementation](#Plugin Implementation)
+   1. [Plugin Implementation](#Plugin-Implementation)
 
-      1). [Device Runtime](#Device Runtime)
+      1). [Device Runtime](#Device-Runtime)
 
       2). [Kernels/Ops](#Kernels/Ops)
 
-      3). [Graph optimization](#Graph optimization)
+      3). [Graph optimization](#Graph-optimization)
 
-   2. [Plugin build](#Plugin build)
+   2. [Plugin build](#Plugin-build)
 
-   3. [Plugin installation](#[Plugin installation)
+   3. [Plugin installation](#[Plugin-installation)
 
-   4. [Plugin Running](#Plugin Running
+   4. [Plugin Running](#Plugin-Running)
 
-[TOC]
 # **Introduction**
 
 This tutorial is intended for developers who wish to extend TensorFlow to support a new device for the current TensorFlow stack through Modular TensorFlow. Plugin provides a decoupled way to add a new device to TensorFlow and has benefits:
@@ -43,7 +42,7 @@ Developers are also recommended to read the Modular TensorFlow design RFC to hav
 * [Modular TensorFlow Graph C API](https://github.com/tensorflow/community/blob/master/rfcs/20201027-modular-tensorflow-graph-c-api.md)
 
 The build environment in this tutorial is based on Linux, however, it is also expected to work on other OS(Windows, MacOS, etc).
-[TOC]
+
 # **Getting started**
 
 In this section, you will learn how to implement, build, install, and run a plugin.
