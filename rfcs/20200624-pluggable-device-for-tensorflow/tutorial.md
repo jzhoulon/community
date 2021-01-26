@@ -633,18 +633,21 @@ After installing the plugin to the specified path (site-packages/tensorflow/pyth
 Front-end usage of the plugged device has no difference with first party devices. Suppose you have installed a plugin registers a new device with "MY_DEVICE" device type, you can:
 
 1)   List device
+
 You can use *tf.config.list_physical_device()* to query whether the MY_DEVICE device is present on the host machine. If it is not found, then the plugin may not be loaded correctly.
 ```
 >>tf.list_physical_devices()
 [PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU'), PhysicalDevice(name='/physical_device:MY_DEVICE:0', device_type=MY_DEVICE)]</td>
 ```
 2)   tf.device
+
 you can use with tf.device("my_device:0") to specify the MY_DEVICE device to be used for ops created/executed in a particular context.
 ```
 >>with tf.device("my_device:0"):
   # ops created here have the device my_device:0</td>
 ```
 3)  automatic device placement
+
 if you don’t specify the device to be user for ops created/executed in a particular context, the op will be auto placed into the MY_DEVICE device if the op for the MY_DEVICE device is registered. Plugged devices currently have the highest priority.
 
  
