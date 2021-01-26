@@ -38,7 +38,7 @@ In this section, you will learn how to implement, build, install, and run a plug
 Modular TensorFlow provides a set of C API as an ABI-stable way to register a custom device runtime, kernels/ops and graph optimizer. This will simplify the distribution of plugins and allow plugin authors to distribute binary artifacts without necessarily publishing plugin source code.
 
 <div align=center>
-<img src=20200624-pluggable-device-for-tensorflow/modular_TensorFlow.png>
+<img src=modular_TensorFlow.png>
 </div>
 
 We anticipate three basic functionalities within a device plug-in module: device runtime, kernel/op, graph optimizer.
