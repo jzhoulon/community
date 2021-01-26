@@ -361,7 +361,7 @@ std::string value = std::string(val.data(), total_size);
 ```
 4. Vector of strings
 
-`TF_OpKernelConstruction_GetAttrStringList` interprets the named kernel construction attribute as string array and fills in `vals` and `length`, each of which must point to an array of length at least `max_values`. The elements of values will point to addresses in `storage` which must be at least `storage_size` bytes in length. Ideally, max_values would be set to list_size and `storage` would be at least total_size, obtained from `TF_OpKernelConstruction_GetAttrSize()`.
+`TF_OpKernelConstruction_GetAttrStringList` interprets the named kernel construction attribute as string array and fills in `vals` and `length`, each of which must point to an array of length at least `max_values`. The elements of values will point to addresses in `storage` which must be at least `storage_size` bytes in length. Ideally, `max_values` would be set to list_size and `storage` would be at least total_size, obtained from `TF_OpKernelConstruction_GetAttrSize()`.
 ```c++
 int32_t list_size = 0;
 int32_t total_size = 0;
@@ -442,7 +442,7 @@ void* Conv2D_Create(Conv2D* kernel, TF_OpKernelConstruction* ctx) {
 
 }
 
-**Compute function**
+ **Compute function**
 
 Basically, compute functions are able to retrieve their input tensors and provide output tensors. In the C++ API, the `tensorflow::OpKernelContext::input` and `setoutput` family of functions provide this functionality. The equivalent C calls will be `TF_GetInput` and `TF_SetOutput` family of functions. These C functions operate on `TF_Tensor`. Besides, the kernel C API provides `TF_GetStream()` for retrieving a computation stream, which allows kernels submitted to the hardware.
 
