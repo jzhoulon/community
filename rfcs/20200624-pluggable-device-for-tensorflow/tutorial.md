@@ -46,7 +46,7 @@ The build environment in this tutorial is based on Linux, however, it is also ex
 # **Getting started**
 
 In this section, you will learn how to implement, build, install, and run a plugin.
-[TOC]
+
 ## **Plugin Implementation**
 
 Modular TensorFlow provides a set of C API as an ABI-stable way to register a custom device runtime, kernels/ops and graph optimizer. This will simplify the distribution of plugins and allow plugin authors to distribute binary artifacts without necessarily publishing plugin source code.
@@ -327,7 +327,7 @@ Here we will show how to use kernel C APIs to implement these functions:
 
  **Creation function**
 
-In the C++ API, kernel’s attributions are retrieved through the GetAttr method in `OpKernelConstruction`.
+In the C++ API, kernel’s attributions are retrieved through the `GetAttr` method in `OpKernelConstruction`.
 ```c++
 explicit Conv2DOp(OpKernelConstruction* context) : BinaryOp<T>(context) {
     TF_RETURN_IF_ERROR(context->GetAttr("dilations", &params_.dilations));
@@ -624,7 +624,7 @@ With this procedure, you can always build the plugin with installed TensorFlow �
 
 ## **Plugin installation**
 
-After building the plugin, you may want to distribute it through the python package. One additional thing you need to do is to make the plugin’s dynamic library (libplugin.so for example) be installed to the specified path (site-packages/tensorflow/python/ tensorflow-plugins/) when the user installs the package. Core TensorFlow will automatically iterate all the installed dynamic libraries in this path and try to load them.
+After building the plugin, you may want to distribute it through the python package. One additional thing you need to do is to make the plugin’s dynamic library (libplugin.so for example) be installed to the specified path (site-packages/tensorflow/python/ tensorflow-plugins/) when the user installs the package. Core TensorFlow will automatically iterate and load all the installed dynamic libraries in this path, then it will register device runtime, kernels/ops and graph optimizer by calling `SE_InitPlugin`, `TF_InitKernel` and `TF_InitGraphPlugin`.
 
 ## **Plugin Running**
 
@@ -644,7 +644,7 @@ You can use *tf.config.list_physical_device()* to query whether the MY_DEVICE de
 you can use with tf.device("my_device:0") to specify the MY_DEVICE device to be used for ops created/executed in a particular context.
 ```
 >>with tf.device("my_device:0"):
-  # ops created here have the device my_device:0</td>
+  # ops created here have the device my_device:0
 ```
 3)  automatic device placement
 
